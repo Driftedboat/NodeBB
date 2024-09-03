@@ -26,63 +26,60 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 	next();
 });
 
-middleware.checkPrivileges = helpers.try(async (req, res, next) => {
-	// Kick out guests, obviously
-	if (req.uid <= 0) {
-		return controllers.helpers.notAllowed(req, res);
-	}
 
-	// Otherwise, check for privilege based on page (if not in mapping, deny access)
+
+middleware.checkPrivileges = helpers.try(async (req, res, next) {
+	if (isGuest(req,res)) return;
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
-	if (path) {
-		const privilege = privileges.admin.resolve(path);
-		if (!await privileges.admin.can(privilege, req.uid)) {
-			return controllers.helpers.notAllowed(req, res);
-		}
-	} else {
-		// If accessing /admin, check for any valid admin privs
-		const privilegeSet = await privileges.admin.get(req.uid);
-		if (!Object.values(privilegeSet).some(Boolean)) {
-			return controllers.helpers.notAllowed(req, res);
-		}
-	}
 
-	// If user does not have password
-	const hasPassword = await user.hasPassword(req.uid);
-	if (!hasPassword) {
-		return next();
-	}
+	isAccesssDenied(path, req, res, function(accessDenied){
+		if (accessDenied) return;
 
-	// Reject if they need to re-login (due to ACP timeout), otherwise extend logout timer
-	const loginTime = req.session.meta ? req.session.meta.datetime : 0;
-	const adminReloginDuration = meta.config.adminReloginDuration * 60000;
-	const disabled = meta.config.adminReloginDuration === 0;
-	if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
-		const timeLeft = parseInt(loginTime, 10) - (Date.now() - adminReloginDuration);
-		if (req.session.meta && timeLeft < Math.min(60000, adminReloginDuration)) {
-			req.session.meta.datetime += Math.min(60000, adminReloginDuration);
-		}
+		hasNoPassword(req, next, function (noPassword) {
+			if (noPassword) return;
 
-		return next();
-	}
+		handleRelogin(req, res, next, function (reLoginHandled){
+			if (reLoginHandled) return;
 
-	let returnTo = req.path;
-	if (nconf.get('relative_path')) {
-		returnTo = req.path.replace(new RegExp(`^${nconf.get('relative_path')}`), '');
-	}
-	returnTo = returnTo.replace(/^\/api/, '');
-
-	req.session.returnTo = returnTo;
-	req.session.forceLogin = 1;
-
-	await plugins.hooks.fire('response:auth.relogin', { req, res });
-	if (res.headersSent) {
-		return;
-	}
-
-	if (res.locals.isAPI) {
-		controllers.helpers.formatApiResponse(401, res);
-	} else {
-		res.redirect(`${nconf.get('relative_path')}/login?local=1`);
-	}
+			redirectToLoginIfNeeded(req, res);
+		});
+	});
 });
+});
+	
+//helper fucntions	
+function isGuest(req, res){
+	if (req.uid <= 0){
+		controllers.helpers.notAllowed(req, res);
+		return true;
+	}
+	return false;
+}
+
+function isAccessDenied(path, req, res, callback){
+	if (path){
+		const privilege = privileges.admin.resolve(path);
+		privileges.admin.can(privilege, req.uid, function (err, canAccess){
+			if (err || !canAccess) {
+				controllers.helpers.notAllowed(req, res);
+				callback(true);
+			}else{
+				callback(false);
+			}
+		});
+	}else{
+		privileges.admin.get(req.uid, function (err, privilegeSet){
+			if (err || !Object.values(privillegeSet).some(Boolean)){
+				controllers.helpers.notAllowed(req, res);
+				callback(true);
+			} else {
+				callback(false);
+			}
+		});
+	}
+}
+
+
+			
+
+	
