@@ -12,11 +12,6 @@ const user = require('../src/user');
 const groups = require('../src/groups');
 const helpers = require('./helpers');
 const meta = require('../src/meta');
-// New
-const sinon = require('sinon');
-const admin = require('../src/middleware/admin'); // Adjust path if necessary
-const plugins = require('../src/plugins'); // Adjust path if necessary
-
 
 describe('Admin Controllers', () => {
 	let tid;
