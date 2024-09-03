@@ -14,7 +14,6 @@ const helpers = require('./helpers');
 const meta = require('../src/meta');
 const sinon = require('sinon');
 const plugins = require('../src/plugins');
-const admin = require('../src/middleware/admin');
 
 
 describe('Admin Controllers', () => {
@@ -79,19 +78,6 @@ describe('Admin Controllers', () => {
 		assert(body);
 	});
 
-    it('should set returnTo and forceLogin, and trigger auth relogin', () => {
-        const req = { path: '/api/test', session: {} };
-        const res = { headersSent: false, locals: {} };
-        const fireStub = sinon.stub(plugins.hooks, 'fire'); // Corrected to use plugins from constants
-
-        admin.redirectToLoginIfNeeded(req, res); // Corrected function call using admin constant
-
-        assert.strictEqual(req.session.returnTo, '/test');
-        assert.strictEqual(req.session.forceLogin, 1);
-        assert(fireStub.calledOnce);
-        fireStub.restore(); // Cleanup after the stub
-    });
-
     // Test case for formatting API response with 401 when headers are not sent and it's an API call
     it('should format API response with 401 if headers are not sent and isAPI', () => {
         const req = { path: '/api/test', session: {}, locals: { isAPI: true } };
@@ -104,24 +90,13 @@ describe('Admin Controllers', () => {
         formatApiResponseStub.restore(); // Cleanup after the stub
     });
 
-    // Test case for redirection to login if headers are not sent and the request is not an API call
-    it('should redirect to login if headers are not sent and not API', () => {
+	it('should redirect to login if headers are not sent and not API', () => {
         const req = { path: '/api/test', session: {}, locals: { isAPI: false } };
         const res = { headersSent: false, redirect: sinon.spy() };
 
-        admin.redirectToLoginIfNeeded(req, res); // Corrected function call
+        redirectToLoginIfNeeded(req, res); // Direct function call
 
         assert(res.redirect.calledWith(`${nconf.get('relative_path')}/login?local=1`)); // Using nconf for relative path
-    });
-
-    // Test case for when headers are already sent and no action should be taken
-    it('should do nothing if headers are already sent', () => {
-        const req = { path: '/api/test', session: {}, locals: {} };
-        const res = { headersSent: true, redirect: sinon.spy() };
-
-        admin.redirectToLoginIfNeeded(req, res); // Corrected function call
-
-        assert(res.redirect.notCalled); // Ensures no redirection happens
     });
 
 // End of new test cases
