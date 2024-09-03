@@ -32,13 +32,13 @@ middleware.checkPrivileges = helpers.try(function (req, res, next) {
 	if (isGuest(req, res)) return;
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
 
-	isAccessDenied(path, req, res, function (accessDenied) => {
+	isAccessDenied(path, req, res, function (accessDenied) {
 		if (accessDenied) return;
 
-		hasNoPassword(req, next, function (noPassword) => {
+		hasNoPassword(req, next, function (noPassword) {
 			if (noPassword) return;
 
-		handleReLogin(req, res, next, function (reLoginHandled) => {
+		handleReLogin(req, res, next, function (reLoginHandled) {
 			if (reLoginHandled) return;
 
 			redirectToLoginIfNeeded(req, res);
@@ -59,7 +59,7 @@ function isGuest(req, res) {
 function isAccessDenied(path, req, res, callback) {
 	if (path) {
 		const privilege = privileges.admin.resolve(path);
-		privileges.admin.can(privilege, req.uid, function (err, canAccess) => {
+		privileges.admin.can(privilege, req.uid, function (err, canAccess) {
 			if (err || !canAccess) {
 				controllers.helpers.notAllowed(req, res);
 				callback(true);
@@ -68,7 +68,7 @@ function isAccessDenied(path, req, res, callback) {
 			}
 		});
 	} else {
-		privileges.admin.get(req.uid, function (err, privilegeSet) => {
+		privileges.admin.get(req.uid, function (err, privilegeSet) {
 			if (err || !Object.values(privilegeSet).some(Boolean)) {
 				controllers.helpers.notAllowed(req, res);
 				callback(true);
