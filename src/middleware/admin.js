@@ -28,7 +28,7 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 
 
 
-middleware.checkPrivileges = helpers.try(async (req, res, next) {
+middleware.checkPrivileges = helpers.try(function (req, res, next) {
 	if (isGuest(req,res)) return;
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
 
