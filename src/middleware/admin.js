@@ -32,13 +32,13 @@ middleware.checkPrivileges = helpers.try(async (req, res, next) {
 	if (isGuest(req,res)) return;
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
 
-	isAccesssDenied(path, req, res, function(accessDenied){
+	isAccessDenied(path, req, res, function(accessDenied){
 		if (accessDenied) return;
 
 		hasNoPassword(req, next, function (noPassword) {
 			if (noPassword) return;
 
-		handleRelogin(req, res, next, function (reLoginHandled){
+		handleReLogin(req, res, next, function (reLoginHandled){
 			if (reLoginHandled) return;
 
 			redirectToLoginIfNeeded(req, res);
@@ -69,7 +69,7 @@ function isAccessDenied(path, req, res, callback){
 		});
 	}else{
 		privileges.admin.get(req.uid, function (err, privilegeSet){
-			if (err || !Object.values(privillegeSet).some(Boolean)){
+			if (err || !Object.values(privilegeSet).some(Boolean)){
 				controllers.helpers.notAllowed(req, res);
 				callback(true);
 			} else {
@@ -91,11 +91,11 @@ function hasNoPassword(req, next, callback) {
 }
 
 function handleReLogin(req, res, next, callback) {
-	const loginTime = req.session.meta ? req.session.meta.datatime : 0;
+	const loginTime = req.session.meta ? req.session.meta.datetime : 0;
 	const adminReloginDuration = meta.config.adminReloginDuration * 60000;
     	const disabled = meta.config.adminReloginDuration === 0;
 
-	if (disabled || (loginTime && parseInt(loginTime, 10) > Data.now() - adminReloginDuration)) {
+	if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
 		extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
 		next();
 		callback(true);
@@ -105,13 +105,13 @@ function handleReLogin(req, res, next, callback) {
 }
 
 function extendLogoutTimer(meta, loginTime, adminReloginDuration) {
-	const timeLeft = parseInt(loginTime, 10) - (Data.now() - adminReloginDuration);
+	const timeLeft = parseInt(loginTime, 10) - (Date.now() - adminReloginDuration);
 	if (meta && timeLeft < Math.min(60000, adminReloginDuration)) {
 		meta.datetime += Math.min (60000, adminReloginDuration);
 	}
 }
 
-function redirectLoginIfNeeded(req, res) {
+function redirectToLoginIfNeeded(req, res) {
 	let returnTo = req.path.replace(/^\/api/, '');
 	if (nconf.get('relative_path')){
 		returnTo = returnTo.replace(new RegExp(`^${nconf.get('relative_path')}`), '');
