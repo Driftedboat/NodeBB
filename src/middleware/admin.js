@@ -28,20 +28,20 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 
 
 
-middleware.checkPrivileges = helpers.try(function (req, res, next) {
+middleware.checkPrivileges = helpers.try(async (req, res, next) => {
 	if (isGuest(req, res)) return;
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
 
-	isAccessDenied(path, req, res, function (accessDenied) {
+	isAccessDenied(path, req, res, async (accessDenied) => {
 		if (accessDenied) return;
 
-		hasNoPassword(req, next, function (noPassword) {
+		hasNoPassword(req, next, async (noPassword) => {
 			if (noPassword) return;
 
-		handleReLogin(req, res, next, function (reLoginHandled) {
-			if (reLoginHandled) return;
+			handleReLogin(req, res, next, async (reLoginHandled) => {
+				if (reLoginHandled) return;
 
-			redirectToLoginIfNeeded(req, res);
+				redirectToLoginIfNeeded(req, res);
 			});
 		});
 	});
@@ -59,7 +59,7 @@ function isGuest(req, res) {
 function isAccessDenied(path, req, res, callback) {
 	if (path) {
 		const privilege = privileges.admin.resolve(path);
-		privileges.admin.can(privilege, req.uid, function (err, canAccess) {
+		privileges.admin.can(privilege, req.uid, async (err, canAccess) => {
 			if (err || !canAccess) {
 				controllers.helpers.notAllowed(req, res);
 				callback(true);
@@ -68,7 +68,7 @@ function isAccessDenied(path, req, res, callback) {
 			}
 		});
 	} else {
-		privileges.admin.get(req.uid, function (err, privilegeSet) {
+		privileges.admin.get(req.uid, async (err, privilegeSet) => {
 			if (err || !Object.values(privilegeSet).some(Boolean)) {
 				controllers.helpers.notAllowed(req, res);
 				callback(true);
@@ -118,7 +118,7 @@ function redirectToLoginIfNeeded(req, res) {
 	}
 	req.session.returnTo = returnTo;
 	req.session.forceLogin = 1;
-	plugins.hooks.fire('response:auth.relogin', {req, res} );
+	plugins.hooks.fire('response:auth.relogin', { req, res });
 
 	if (res.headersSent) return;
 
@@ -127,5 +127,4 @@ function redirectToLoginIfNeeded(req, res) {
 	} else {
 		res.redirect(`${nconf.get('relative_path')}/login?local=1`);
 	}
-}
-	
+}	
