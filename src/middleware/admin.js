@@ -26,26 +26,6 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 	next();
 });
 
-'use strict';
-const nconf = require('nconf');
-const user = require('../user');
-const meta = require('../meta');
-const plugins = require('../plugins');
-const privileges = require('../privileges');
-const helpers = require('./helpers');
-const controllers = {
-	admin: require('../controllers/admin'),
-	helpers: require('../controllers/helpers'),
-};
-const middleware = module.exports;
-middleware.buildHeader = helpers.try(async (req, res, next) => {
-	res.locals.renderAdminHeader = true;
-	if (req.method === 'GET') {
-		await require('./index').applyCSRFasync(req, res);
-	}
-	res.locals.config = await controllers.admin.loadConfig(req);
-	next();
-});
 middleware.checkPrivileges = helpers.try(async (req, res, next) => {
 	if (isGuest(req, res)) return;
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
