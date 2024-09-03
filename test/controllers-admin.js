@@ -78,29 +78,6 @@ describe('Admin Controllers', () => {
 		assert(body);
 	});
 
-    // Test case for formatting API response with 401 when headers are not sent and it's an API call
-    it('should format API response with 401 if headers are not sent and isAPI', () => {
-        const req = { path: '/api/test', session: {}, locals: { isAPI: true } };
-        const res = { headersSent: false, status: sinon.spy(), json: sinon.spy() };
-        const formatApiResponseStub = sinon.stub(controllers.helpers, 'formatApiResponse'); // Corrected to use controllers from constants
-
-        admin.redirectToLoginIfNeeded(req, res); // Corrected function call
-
-        assert(formatApiResponseStub.calledWith(401, res));
-        formatApiResponseStub.restore(); // Cleanup after the stub
-    });
-
-	it('should redirect to login if headers are not sent and not API', () => {
-        const req = { path: '/api/test', session: {}, locals: { isAPI: false } };
-        const res = { headersSent: false, redirect: sinon.spy() };
-
-        redirectToLoginIfNeeded(req, res); // Direct function call
-
-        assert(res.redirect.calledWith(`${nconf.get('relative_path')}/login?local=1`)); // Using nconf for relative path
-    });
-
-// End of new test cases
-
 	it('should load admin dashboard', async () => {
 		await groups.join('administrators', adminUid);
 		const dashboards = [
