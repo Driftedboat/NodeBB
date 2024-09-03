@@ -12,6 +12,11 @@ const user = require('../src/user');
 const groups = require('../src/groups');
 const helpers = require('./helpers');
 const meta = require('../src/meta');
+// New
+const sinon = require('sinon');
+const admin = require('../src/middleware/admin'); // Adjust path if necessary
+const plugins = require('../src/plugins'); // Adjust path if necessary
+
 
 describe('Admin Controllers', () => {
 	let tid;
@@ -75,61 +80,52 @@ describe('Admin Controllers', () => {
 		assert(body);
 	});
 
-	//added cases
-	
-	const sinon = require('sinon');  // Added to fix 'sinon' is not defined error.
-	const admin = require('../src/middleware/admin');  // Adjust the path if needed.
-	
-	// New test cases for redirectToLoginIfNeeded
-	describe('redirectToLoginIfNeeded', () => {
-		// Fixed indentation and 'sinon' is not defined error
-		it('should set returnTo and forceLogin, and trigger auth relogin', () => {
-			const req = { path: '/api/test', session: {} };
-			const res = { headersSent: false, locals: {} };
-			const fireStub = sinon.stub(admin.plugins.hooks, 'fire');  // Changed 'admin' definition
-	
-			admin.redirectToLoginIfNeeded(req, res);  // Corrected 'admin' usage
-	
-			assert.strictEqual(req.session.returnTo, '/test');
-			assert.strictEqual(req.session.forceLogin, 1);
-			assert(fireStub.calledOnce);
-			fireStub.restore();  // Clean up the stub after usage
-		});
-	
-		// Fixed indentation, undefined 'admin' and 'sinon', and trailing spaces
-		it('should format API response with 401 if headers are not sent and isAPI', () => {
-			const req = { path: '/api/test', session: {}, locals: { isAPI: true } };
-			const res = { headersSent: false, locals: {}, status: sinon.spy(), json: sinon.spy() };
-			const formatApiResponseStub = sinon.stub(admin.controllers.helpers, 'formatApiResponse');  // Corrected stub definition
-	
-			admin.redirectToLoginIfNeeded(req, res);  // Corrected function call
-	
-			assert(formatApiResponseStub.calledWith(401, res));
-			formatApiResponseStub.restore();  // Clean up stub after test
-		});
-	
-		// Fixed indentation, trailing spaces, and corrected use of 'admin' and 'sinon'
-		it('should redirect to login if headers are not sent and not API', () => {
-			const req = { path: '/api/test', session: {}, locals: { isAPI: false } };
-			const res = { headersSent: false, redirect: sinon.spy() };
-	
-			admin.redirectToLoginIfNeeded(req, res);  // Corrected function call
-	
-			assert(res.redirect.calledWith(`${nconf.get('relative_path')}/login?local=1`));  // Adjusted URL based on configuration
-		});
-	
-		// Fixed indentation, removed trailing spaces
-		it('should do nothing if headers are already sent', () => {
-			const req = { path: '/api/test', session: {}, locals: {} };
-			const res = { headersSent: true, redirect: sinon.spy() };
-	
-			admin.redirectToLoginIfNeeded(req, res);  // Corrected function call
-	
-			assert(res.redirect.notCalled);  // Check that no redirection occurs
-		});
-	});	
+    it('should set returnTo and forceLogin, and trigger auth relogin', () => {
+        const req = { path: '/api/test', session: {} };
+        const res = { headersSent: false, locals: {} };
+        const fireStub = sinon.stub(plugins.hooks, 'fire'); // Corrected to use plugins from constants
 
-	//end
+        admin.redirectToLoginIfNeeded(req, res); // Corrected function call using admin constant
+
+        assert.strictEqual(req.session.returnTo, '/test');
+        assert.strictEqual(req.session.forceLogin, 1);
+        assert(fireStub.calledOnce);
+        fireStub.restore(); // Cleanup after the stub
+    });
+
+    // Test case for formatting API response with 401 when headers are not sent and it's an API call
+    it('should format API response with 401 if headers are not sent and isAPI', () => {
+        const req = { path: '/api/test', session: {}, locals: { isAPI: true } };
+        const res = { headersSent: false, status: sinon.spy(), json: sinon.spy() };
+        const formatApiResponseStub = sinon.stub(controllers.helpers, 'formatApiResponse'); // Corrected to use controllers from constants
+
+        admin.redirectToLoginIfNeeded(req, res); // Corrected function call
+
+        assert(formatApiResponseStub.calledWith(401, res));
+        formatApiResponseStub.restore(); // Cleanup after the stub
+    });
+
+    // Test case for redirection to login if headers are not sent and the request is not an API call
+    it('should redirect to login if headers are not sent and not API', () => {
+        const req = { path: '/api/test', session: {}, locals: { isAPI: false } };
+        const res = { headersSent: false, redirect: sinon.spy() };
+
+        admin.redirectToLoginIfNeeded(req, res); // Corrected function call
+
+        assert(res.redirect.calledWith(`${nconf.get('relative_path')}/login?local=1`)); // Using nconf for relative path
+    });
+
+    // Test case for when headers are already sent and no action should be taken
+    it('should do nothing if headers are already sent', () => {
+        const req = { path: '/api/test', session: {}, locals: {} };
+        const res = { headersSent: true, redirect: sinon.spy() };
+
+        admin.redirectToLoginIfNeeded(req, res); // Corrected function call
+
+        assert(res.redirect.notCalled); // Ensures no redirection happens
+    });
+
+// End of new test cases
 
 	it('should load admin dashboard', async () => {
 		await groups.join('administrators', adminUid);
