@@ -127,4 +127,4 @@ function redirectToLoginIfNeeded(req, res) {
 	} else {
 		res.redirect(`${nconf.get('relative_path')}/login?local=1`);
 	}
-}	
+}
