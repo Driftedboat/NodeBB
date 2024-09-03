@@ -79,7 +79,34 @@ function isAccessDenied(path, req, res, callback){
 	}
 }
 
+function hasNoPassword(req, next, callback) {
+	user.hasPassword(req.uid, function (err, hasPassword) {
+		if (err || !hasPassword) {
+			next();
+			callback(true);
+		} else {
+			callback(false);
+		}
+	});
+}
 
+function handleReLogin(req, res, next, callback) {
+	const loginTime = req.session.meta ? req.session.meta.datatime : 0;
+	const adminReloginDuration = meta.config.adminReloginDuration * 60000;
+    	const disabled = meta.config.adminReloginDuration === 0;
+
+	if (disabled || (loginTime && parseInt(loginTime, 10) > Data.now() - adminReloginDuration)) {
+		extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
+		next();
+		callback(true);
+	} else {
+		callback(false)
+	}
+}
+
+function extend
+
+	
 			
 
 	
