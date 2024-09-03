@@ -50,6 +50,7 @@ function isGuest(req, res) {
 	if (req.uid <= 0) {
 		return controllers.helpers.notAllowed(req, res);
 }
+}
 
 function isAccessDenied(path, req, res, callback) {
 	if (path) {
