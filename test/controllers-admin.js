@@ -12,8 +12,6 @@ const user = require('../src/user');
 const groups = require('../src/groups');
 const helpers = require('./helpers');
 const meta = require('../src/meta');
-const sinon = require('sinon');
-const plugins = require('../src/plugins');
 
 
 describe('Admin Controllers', () => {
