@@ -14,6 +14,7 @@ const helpers = require('./helpers');
 const meta = require('../src/meta');
 const sinon = require('sinon');
 const plugins = require('../src/plugins');
+const admin = require('../src/middleware/admin');
 
 
 describe('Admin Controllers', () => {
