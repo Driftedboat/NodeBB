@@ -104,9 +104,29 @@ function handleReLogin(req, res, next, callback) {
 	}
 }
 
-function extend
+function extendLogoutTimer(meta, loginTime, adminReloginDuration) {
+	const timeLeft = parseInt(loginTime, 10) - (Data.now() - adminReloginDuration);
+	if (meta && timeLeft < Math.min(60000, adminReloginDuration)) {
+		meta.datetime += Math.min (60000, adminReloginDuration);
+	}
+}
 
-	
-			
+function redirectLoginIfNeeded(req, res) {
+	let returnTo = req.path.replace(/^\/api/, '');
+	if (nconf.get('relative_path')){
+		returnTo = returnTo.replace(new RegExp(`^${nconf.get('relative_path')}`), '');
+	}
+	req.session.returnTo=returnTo;
+	req.session.forceLogin = 1;
+	plugins.hooks.fire('response:auth.relogin', {req, res});
+
+	if (res.headersSent) return;
+
+	if (res.locals.isAPI) {
+		controllers.helpers.formatApiResponse(401, res);
+	} else {
+		res.redirect(`${nconf.get('relative_path')}/login?local=1`);
+	}
+}
 
 	
