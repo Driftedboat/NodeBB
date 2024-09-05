@@ -37,9 +37,8 @@ middleware.checkPrivileges = helpers.try(async (req, res, next) => {
     	hasNoPassword(req, res, (noPassword) => {
       		if (noPassword) return;
       // Handle re-login
-	  		handleReLogin(req, res, (reLoginHandled) => {
-				if (reLoginHandled) return;
-      			next();
+	  		if (handleReLogin(req, res)) return;
+      		next();
     		});
   		});
 	});
@@ -85,21 +84,17 @@ function hasNoPassword(req, res, callback) {
 	  }
 	});
 }
-function handleReLogin(req, res, callback) {
+function handleReLogin(req, res) {
 	const loginTime = req.session.meta ? req.session.meta.datetime : 0;
 	const adminReloginDuration = meta.config.adminReloginDuration * 60000;
 	const disabled = meta.config.adminReloginDuration === 0;
-	if (process.env.NODE_ENV === 'test') {
-		callback(false);
-		return;
-	}
+  
 	if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
-		extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
-		res.redirect('/login');
-    	callback(true);
-	} else {
-		callback(false);
+	  extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
+	  res.redirect('/login'); // Handle re-login with redirection
+	  return true;
 	}
+	return false;
 }
 function extendLogoutTimer(meta, loginTime, adminReloginDuration) {
 	const timeLeft = parseInt(loginTime, 10) - (Date.now() - adminReloginDuration);
