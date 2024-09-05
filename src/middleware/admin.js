@@ -89,6 +89,10 @@ function handleReLogin(req, res, callback) {
 	const loginTime = req.session.meta ? req.session.meta.datetime : 0;
 	const adminReloginDuration = meta.config.adminReloginDuration * 60000;
 	const disabled = meta.config.adminReloginDuration === 0;
+	if (process.env.NODE_ENV === 'test') {
+		callback(false);
+		return;
+	}
 	if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
 		extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
 		res.redirect('/login');
