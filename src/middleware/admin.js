@@ -32,16 +32,14 @@ middleware.checkPrivileges = helpers.try(async (req, res, next) => {
 
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
   
-	// Check if access is denied
-	const accessDenied = await isAccessDenied(path, req, res);
-	if (accessDenied) return;
-  
-	// Check if has no password set
-	const noPassword = await hasNoPassword(req);
-	if (noPassword) return res.status(401); 
+	// Check if access is denied based on the path
+	if (isAccessDenied(path, req, res)) return;
+
+	// Check if the user has no password set
+	if (hasNoPassword(req, res)) return;
+
 	// Handle re-login
-	const reLoginHandled = await handleReLogin(req, res);
-	if (reLoginHandled) return;
+	if (handleReLogin(req, res)) return;
   
 	//  call next if none of the above checks stopped execution
 	next();
@@ -80,9 +78,9 @@ function isAccessDenied(path, req, res, callback) {
 function hasNoPassword(req, next, callback) {
 	user.hasPassword(req.uid, (err, hasPassword) => {
 		if (err || !hasPassword) {
-			resolve(true);
+			return true;
 		} else {
-			resolve(false);
+			return false;
 		}
 	});
 }
