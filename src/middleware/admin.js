@@ -28,7 +28,7 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 
 
 middleware.checkPrivileges = helpers.try(async (req, res, next) => {
-	console.log("Crystal Cheng: Refactored code executed");
+	console.log('Crystal Cheng: Refactored code executed');
 	if (req.uid <= 0) {
 		return controllers.helpers.notAllowed(req, res);
 	}
@@ -68,7 +68,6 @@ function isAccessDenied(path, req, res, callback) {
 	}
 }
 function hasNoPassword(req, next, callback) {
-	console.log("Crystal Cheng: Refactored code executed");
 	user.hasPassword(req.uid, (err, hasPassword) => {
 		if (err || !hasPassword) {
 			next();
@@ -79,7 +78,6 @@ function hasNoPassword(req, next, callback) {
 	});
 }
 function handleReLogin(req, res, next, callback) {
-	console.log("Crystal Cheng: Refactored code executed");
 	const loginTime = req.session.meta ? req.session.meta.datetime : 0;
 	const adminReloginDuration = meta.config.adminReloginDuration * 60000;
 	const disabled = meta.config.adminReloginDuration === 0;
