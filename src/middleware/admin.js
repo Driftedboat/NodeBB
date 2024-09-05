@@ -27,19 +27,26 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 });
 
 middleware.checkPrivileges = helpers.try(async (req, res, next) => {
+	// Check if the user is a guest
 	if (isGuest(req, res)) return;
+
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
-	isAccessDenied(path, req, res, async (accessDenied) => {
-		if (accessDenied) return;
-		hasNoPassword(req, next, async (noPassword) => {
-			if (noPassword) return;
-			handleReLogin(req, res, next, async (reLoginHandled) => {
-				if (reLoginHandled) return;
-				next();
-			});
-		});
-	});
+  
+	// Check if access is denied
+	const accessDenied = await isAccessDenied(path, req, res);
+	if (accessDenied) return;
+  
+	// Check if has no password set
+	const noPassword = await hasNoPassword(req);
+	if (noPassword) return res.status(401); 
+	// Handle re-login
+	const reLoginHandled = await handleReLogin(req, res);
+	if (reLoginHandled) return;
+  
+	//  call next if none of the above checks stopped execution
+	next();
 });
+
 // helper fucntions
 function isGuest(req, res) {
 	if (req.uid <= 0) {
@@ -73,10 +80,9 @@ function isAccessDenied(path, req, res, callback) {
 function hasNoPassword(req, next, callback) {
 	user.hasPassword(req.uid, (err, hasPassword) => {
 		if (err || !hasPassword) {
-			next();
-			callback(true);
+			resolve(true);
 		} else {
-			callback(false);
+			resolve(false);
 		}
 	});
 }
@@ -86,10 +92,9 @@ function handleReLogin(req, res, next, callback) {
 	const disabled = meta.config.adminReloginDuration === 0;
 	if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
 		extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
-		next();
-		callback(true);
+		return true;
 	} else {
-		callback(false);
+		return false;
 	}
 }
 function extendLogoutTimer(meta, loginTime, adminReloginDuration) {
