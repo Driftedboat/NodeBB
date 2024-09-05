@@ -33,10 +33,10 @@ middleware.checkPrivileges = helpers.try(async (req, res, next) => {
 
 	isAccessDenied(path, req, res, (accessDenied) => {
 		if (accessDenied) return;
-	// Check if the user has no password set
-    	hasNoPassword(req, (noPassword) => {
-      		if (noPassword) return;
-      // Handle re-login
+		// Check if the user has no password set
+		hasNoPassword(req, (noPassword) => {
+			if (noPassword) return;
+			// Handle re-login
 	  		handleReLogin(req, res, (reLoginHandled) => {
         		if (reLoginHandled) return;
 				next();
@@ -69,9 +69,9 @@ function isAccessDenied(path, req, res, callback) {
 				controllers.helpers.notAllowed(req, res);
 				callback(true);
 			} else {
-				callback(false); 
+				callback(false);
 			}
-	  	});
+		});
 	}
 }
 function hasNoPassword(req, callback) {
@@ -80,14 +80,14 @@ function hasNoPassword(req, callback) {
 			callback(true);
 		} else {
 			callback(false);
-	  	}
+		}
 	});
 }
 function handleReLogin(req, res, callback) {
 	const loginTime = req.session.meta ? req.session.meta.datetime : 0;
 	const adminReloginDuration = meta.config.adminReloginDuration * 60000;
 	const disabled = meta.config.adminReloginDuration === 0;
-  
+
 	if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
 		extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
 		res.redirect('/login'); // Handle re-login with redirection
