@@ -37,8 +37,8 @@ middleware.checkPrivileges = helpers.try(async (req, res, next) => {
 		hasNoPassword(req, (noPassword) => {
 			if (noPassword) return;
 			// Handle re-login
-	  		handleReLogin(req, res, (reLoginHandled) => {
-        		if (reLoginHandled) return;
+			handleReLogin(req, res, (reLoginHandled) => {
+				if (reLoginHandled) return;
 				next();
 			});
 		});
