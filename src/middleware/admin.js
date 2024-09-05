@@ -26,20 +26,20 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 	next();
 });
 
-middleware.checkPrivileges = helpers.try(async(req, res, next) => {
+middleware.checkPrivileges = helpers.try(async (req, res, next) => {
 	// Check if the user is a guest
 	if (isGuest(req)) return;
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
 
-    isAccessDenied(path, req, res, (accessDenied) => {
-    	if (accessDenied) return;
-    // Check if the user has no password set
+	isAccessDenied(path, req, res, (accessDenied) => {
+		if (accessDenied) return;
+	// Check if the user has no password set
     	hasNoPassword(req, (noPassword) => {
       		if (noPassword) return;
       // Handle re-login
-	  	handleReLogin(req, res, (reLoginHandled) => {
-        	if (reLoginHandled) return;
-			next();
+	  		handleReLogin(req, res, (reLoginHandled) => {
+        		if (reLoginHandled) return;
+				next();
 			});
 		});
 	});
@@ -54,33 +54,33 @@ function isGuest(req) {
 }
 function isAccessDenied(path, req, res, callback) {
 	if (path) {
-	  const privilege = privileges.admin.resolve(path);
-	  privileges.admin.can(privilege, req.uid, (err, canAccess) => {
-		if (err || !canAccess) {
-		  controllers.helpers.notAllowed(req, res);
-		  callback(true);
-		} else {
-		  callback(false);
-		}
-	  });
+		const privilege = privileges.admin.resolve(path);
+		privileges.admin.can(privilege, req.uid, (err, canAccess) => {
+			if (err || !canAccess) {
+				controllers.helpers.notAllowed(req, res);
+				callback(true);
+			} else {
+				callback(false);
+			}
+		});
 	} else {
-	  privileges.admin.get(req.uid, (err, privilegeSet) => {
-		if (err || !Object.values(privilegeSet).some(Boolean)) {
-		  controllers.helpers.notAllowed(req, res);
-		  callback(true);
-		} else {
-		  callback(false); 
-		}
-	  });
+		privileges.admin.get(req.uid, (err, privilegeSet) => {
+			if (err || !Object.values(privilegeSet).some(Boolean)) {
+				controllers.helpers.notAllowed(req, res);
+				callback(true);
+			} else {
+				callback(false); 
+			}
+	  	});
 	}
 }
 function hasNoPassword(req, callback) {
 	user.hasPassword(req.uid, (err, hasPassword) => {
-	  if (err || !hasPassword) {
-		callback(true);
-	} else {
-		callback(false);
-	  }
+		if (err || !hasPassword) {
+			callback(true);
+		} else {
+			callback(false);
+	  	}
 	});
 }
 function handleReLogin(req, res, callback) {
@@ -89,11 +89,11 @@ function handleReLogin(req, res, callback) {
 	const disabled = meta.config.adminReloginDuration === 0;
   
 	if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
-	  extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
-	  res.redirect('/login'); // Handle re-login with redirection
-	  callback(true);
+		extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
+		res.redirect('/login'); // Handle re-login with redirection
+		callback(true);
 	} else {
-	callback(false);
+		callback(false);
 	}
 }
 function extendLogoutTimer(meta, loginTime, adminReloginDuration) {
