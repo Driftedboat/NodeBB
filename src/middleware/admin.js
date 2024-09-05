@@ -26,28 +26,28 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 	next();
 });
 
-middleware.checkPrivileges = helpers.try(async (req, res, next) => {
+middleware.checkPrivileges = helpers.try(async(req, res, next) => {
 	// Check if the user is a guest
-	if (isGuest(req, res)) return;
+	if (isGuest(req)) return;
 	const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, '');
 
     isAccessDenied(path, req, res, (accessDenied) => {
     	if (accessDenied) return;
     // Check if the user has no password set
-    	hasNoPassword(req, res, (noPassword) => {
+    	hasNoPassword(req, (noPassword) => {
       		if (noPassword) return;
       // Handle re-login
-	  		if (handleReLogin(req, res)) return;
-      		next();
-    		});
-  		});
+	  	handleReLogin(req, res, (reLoginHandled) => {
+        	if (reLoginHandled) return;
+			next();
+			});
+		});
 	});
 });
 
 // helper fucntions
-function isGuest(req, res) {
+function isGuest(req) {
 	if (req.uid <= 0) {
-		controllers.helpers.notAllowed(req, res);
 		return true;
 	}
 	return false;
@@ -74,17 +74,16 @@ function isAccessDenied(path, req, res, callback) {
 	  });
 	}
 }
-function hasNoPassword(req, res, callback) {
+function hasNoPassword(req, callback) {
 	user.hasPassword(req.uid, (err, hasPassword) => {
 	  if (err || !hasPassword) {
-		res.status(401).send('No password set for this user');
 		callback(true);
 	} else {
 		callback(false);
 	  }
 	});
 }
-function handleReLogin(req, res) {
+function handleReLogin(req, res, callback) {
 	const loginTime = req.session.meta ? req.session.meta.datetime : 0;
 	const adminReloginDuration = meta.config.adminReloginDuration * 60000;
 	const disabled = meta.config.adminReloginDuration === 0;
@@ -92,9 +91,10 @@ function handleReLogin(req, res) {
 	if (disabled || (loginTime && parseInt(loginTime, 10) > Date.now() - adminReloginDuration)) {
 	  extendLogoutTimer(req.session.meta, loginTime, adminReloginDuration);
 	  res.redirect('/login'); // Handle re-login with redirection
-	  return true;
+	  callback(true);
+	} else {
+	callback(false);
 	}
-	return false;
 }
 function extendLogoutTimer(meta, loginTime, adminReloginDuration) {
 	const timeLeft = parseInt(loginTime, 10) - (Date.now() - adminReloginDuration);
